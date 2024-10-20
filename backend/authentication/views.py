@@ -24,6 +24,7 @@ class Register(APIView):
 class Login(APIView):
     def post(self,request):
         data=request.data
+       
         email=data['email']
         password=data['password']
         user=authenticate(email=email,password=password)
@@ -32,11 +33,24 @@ class Login(APIView):
                 
                 login(request,user)
                 token=RefreshToken.for_user(user)
+
+                if user.is_superuser:
+                    user_type = 'admin'
+                elif user.is_staff:
+                    user_type = 'staff'
+                else:
+                    try:
+                        profile = user.profile  
+                        user_type = profile.user_type  
+                    except AttributeError:
+                        user_type = 'regular'
                 return Response({'message':'you are successfully logged in',
                                 
                                 'refresh':str(token),
                                 'access':str(token.access_token),
-                                'pk':user.pk
+                                'user_type': user_type,
+                                'pk':user.pk,
+                                'email':user.email
 
                 },status=status.HTTP_200_OK)
             

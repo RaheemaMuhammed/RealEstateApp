@@ -21,7 +21,7 @@ export const Registeration = async (values) => {
 
 // Login
 
-export const Login = async (values) =>{
+export const LoginAPI = async (values) =>{
     try {
         const config = {
             headers :{

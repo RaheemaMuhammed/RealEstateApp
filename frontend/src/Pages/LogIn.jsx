@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Login } from '../api/services'
+import {  LoginAPI } from '../api/services'
 import { useFormik } from 'formik'
 import * as yup from 'yup';
 import { toast } from 'react-toastify';
@@ -18,7 +18,7 @@ const login = () => {
       
   
       try{
-        const response = await Login(values)
+        const response = await LoginAPI(values)
         console.log(response);
         if(response && response?.access){
             dispatch((UserLogin({refreshToken: response?.refresh,
