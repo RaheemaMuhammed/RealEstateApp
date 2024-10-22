@@ -23,10 +23,17 @@ class Register(APIView):
 
 class Login(APIView):
     def post(self,request):
+        
         data=request.data
        
-        email=data['email']
-        password=data['password']
+        email=data.get('email')
+        password=data.get('password')
+
+        if not email:
+            return Response({'message': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not password:
+            return Response({'message': 'Password is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         user=authenticate(email=email,password=password)
         if user is not None:
             

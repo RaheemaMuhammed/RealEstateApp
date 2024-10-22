@@ -3,22 +3,63 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import CustomNavLink from "./CustomNavLink";
 import { UserLogout } from "../store/UserSlice";
-
+import { BsBell } from "react-icons/bs";
+import { GetNotifications } from "../api/services";
+import "./tailwind.css";
+import useWebSocket from "../hooks/useWebsocket";
+import NotificationListing from "./NotificationListing";
+import { CiUser } from "react-icons/ci";
+import { IoIosNotificationsOutline } from "react-icons/io";
 const Header = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const token = useSelector((state) => state.UserReducer.accessToken);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // useEffect(() => {
+  const [notificationList, setNotificationList] = useState(false);
+  const [notiCount, setNotiCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [flyNoti, setFlyNoti] = useState("");
+  const [Refresh, setRefresh] = useState(false);
 
-  //     if (token) {
-  //         setIsAuthenticated(true);
-  //     } else {
-  //         setIsAuthenticated(false);
-  //     }
+  // to show flying notification
+  const showNotification = (message) => {
+    setFlyNoti(message);
+    setTimeout(() => {
+      setFlyNoti("");
+    }, 3000);
+  };
 
-  // }, [])
+  useWebSocket(token, (data) => {
+    setNotifications((prevNotifications) => [
+      data,
+      ...(prevNotifications || []),
+    ]);
+    showNotification(data?.message);
+  });
 
+  // getting notifications
+  useEffect(() => {
+    if (token) {
+      try {
+        const userNotifications = async () => {
+          const response = await GetNotifications(token);
+          console.log(response,'noftsvfd');
+          setNotifications(response?.payload);
+        };
+        userNotifications();
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }, [Refresh, token]);
+
+  useEffect(() => {
+    const unreadNotifications = notifications?.filter((noti) => !noti.is_read);
+
+    setNotiCount(unreadNotifications?.length || 0);
+  }, [notifications]);
+
+  // logout function
   const handleLogout = () => {
     if (token) {
       dispatch(UserLogout());
@@ -28,7 +69,9 @@ const Header = () => {
 
   return (
     <header>
-      <nav className="bg-white border-gray-200 px-4 lg:px-6 py-5 dark:bg-gray-800">
+      {flyNoti !== "" && <p className={`notification`}>{flyNoti}</p>}
+
+      <nav className="bg-white sticky border-gray-200 px-4 lg:px-6 py-5 dark:bg-gray-800">
         <div className="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">
           <Link to="/" className="flex items-center">
             <img
@@ -44,30 +87,47 @@ const Header = () => {
           <div className="flex items-center lg:order-2">
             {token ? (
               <>
-                <p
+                {notificationList && (
+                  <NotificationListing
+                    notifications={notifications}
+                    setNotificationList={setNotificationList}
+                    notificationList={notificationList}
+                    setNotiCount={setNotiCount}
+                    token={token}
+                  />
+                )}
+                <li className="flex p-1 cursor-pointer">
+                  <span
+                    className="relative"
+                    onClick={() => {
+                      setNotificationList(!notificationList);
+                    }}
+                  >
+                    <IoIosNotificationsOutline
+                      size={30}
+                      color="#1d4ed8 "
+                      style={{ marginTop: "1px" }}
+                    />
+                  </span>
+                  {notiCount > 0 && (
+                    <span className="absolute mt-0 bg-orange-900 text-white rounded-3xl h-fit w-4 text-center text-xs font-bold">
+                      {notiCount}
+                    </span>
+                  )}
+                  <Link to="/my_account">
+                    <p>
+                      <CiUser size={28} color="#1d4ed8 " />
+                    </p>
+                  </Link>
+                </li>
+
+                {/* <p
                   className="mx-1 mr-3 cursor-pointer font-semibold text-primary-700"
                   onClick={handleLogout}
                 >
                   {" "}
                   Logout
-                </p>
-                <p>
-                  {" "}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="33"
-                    height="33"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#1d4ed8"
-                    stroke-width="1"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </p>
+                </p> */}
               </>
             ) : (
               <Link

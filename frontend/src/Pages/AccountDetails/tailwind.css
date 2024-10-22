@@ -1,0 +1,37 @@
+/* tailwind.css */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+
+.sidebar_icon{
+    @apply size-5 mt-1 text-gray-600 mx-2 
+}
+
+.description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 2;
+  }
+  
+  .badge-sale {
+    background-color: #ff5722;
+    color: white;
+    padding: 2px 4px;
+    border-radius: 5px;
+  }
+  .badge-lease {
+    background-color: #03a9f4;
+    color: white;
+    padding: 2px 4px;
+    border-radius: 5px;
+  }
+  .badge-rent {
+    background-color: #4caf50;
+    color: white;
+    padding: 2px 4px;
+    border-radius: 5px;
+  }
+  

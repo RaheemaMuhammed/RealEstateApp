@@ -237,7 +237,7 @@ const applyFilters = () => {
                   </div>
 
                   <p class="flex gap-2 mb-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                    <IoLocationOutline />
+                    <IoLocationOutline style={{marginTop:'4px'}}/>
                     {property?.address}
                   </p>
                   <p class="mb-3 font-normal text-gray-700 dark:text-gray-400 overflow-hidden text-ellipsis line-clamp-3">

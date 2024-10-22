@@ -24,6 +24,9 @@ class PropertySerializer(ModelSerializer):
     lease_listing_details = SerializerMethodField()
     rent_listing_details = SerializerMethodField()
 
+    is_saved = SerializerMethodField()
+    owner_id = SerializerMethodField()
+
     class Meta:
         model = Property
         fields = [
@@ -43,6 +46,7 @@ class PropertySerializer(ModelSerializer):
             'is_for_rent',
             'listing_price',
             'listing_price_per_month',
+            'owner_id',
             'owner_name',
             'owner_email',
             'owner_phone',
@@ -50,6 +54,7 @@ class PropertySerializer(ModelSerializer):
             'sale_listing_details',
             'lease_listing_details',
             'rent_listing_details',
+            'is_saved'
         ]
 
     def get_is_for_sale(self, obj):
@@ -122,6 +127,11 @@ class PropertySerializer(ModelSerializer):
     
     def get_is_owner(self, obj):
         return obj.owner.user_type == 'owner' if obj.owner else False
+    
+    def get_is_saved(self,obj):
+        return SavedProperties.objects.filter(property_id=obj).exists()
+    def get_owner_id(self,obj):
+        return obj.owner.user.id if obj.owner else None
 
 class SaleListingSerializer(ModelSerializer):
     class Meta:
@@ -137,3 +147,43 @@ class RentListingSerializer(ModelSerializer):
     class Meta:
         model = RentListing
         fields = ['price_per_month', 'rent_term', 'conditions']
+
+
+class CallRequestSerializer(ModelSerializer):
+
+    class Meta:
+        model = CallRequest
+        fields = ['id', 'requested_by', 'lister', 'property', 'message', 'phone_number','listing_type', 'status','is_completed','created_at']
+
+class NotificationSerializer(ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'user', 'content', 'notification_type', 'call_request',  'is_read', 'created_at']
+
+class SavedPropertySerializer(ModelSerializer):
+    class Meta:
+        model = SavedProperties
+        fields = '__all__'
+
+class ContractSerializer(ModelSerializer):
+    class Meta:
+        model = Contract
+        fields = '__all__'
+
+class ExtendedPropertySerializer(PropertySerializer):
+    call_requests = SerializerMethodField()  
+    contracts = SerializerMethodField()      
+
+    class Meta(PropertySerializer.Meta): 
+        fields = PropertySerializer.Meta.fields + [
+            'call_requests',
+            'contracts',
+        ]
+
+    def get_call_requests(self, obj):
+        requests = CallRequest.objects.filter(property=obj)
+        return CallRequestSerializer(requests, many=True).data
+
+    def get_contracts(self, obj):
+        contracts = Contract.objects.filter(property=obj)
+        return ContractSerializer(contracts, many=True).data
