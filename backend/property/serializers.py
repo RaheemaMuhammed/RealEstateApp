@@ -1,6 +1,6 @@
-from rest_framework.serializers import ModelSerializer,SerializerMethodField
+from rest_framework.serializers import ModelSerializer,SerializerMethodField,BooleanField
 from .models import *
-
+from .utils import generate_docusign_preview_url
 class ProfileSerializer(ModelSerializer):
     class Meta:
         model = Profile
@@ -166,9 +166,25 @@ class SavedPropertySerializer(ModelSerializer):
         fields = '__all__'
 
 class ContractSerializer(ModelSerializer):
+    preview_url = SerializerMethodField()
     class Meta:
         model = Contract
-        fields = '__all__'
+        fields = ['id','property', 'buyer_or_renter', 'owner_or_agent', 'status', 'preview_url']
+
+    def get_preview_url(self, obj):
+
+        request = self.context.get('request')
+        print(request)
+       
+        # admin_email = request.user.email  # Get admin email from the request user
+        # admin_name = request.user.get_full_name()  # Get admin name
+
+        try:
+            # return generate_docusign_preview_url(obj.docu_sign_url, admin_email, admin_name)
+            pass
+        except Exception as e:
+            print(f"Error generating preview URL: {e}")
+            return None  # Or you could return an error message, depending on yo
 
 class ExtendedPropertySerializer(PropertySerializer):
     call_requests = SerializerMethodField()  
@@ -187,3 +203,16 @@ class ExtendedPropertySerializer(PropertySerializer):
     def get_contracts(self, obj):
         contracts = Contract.objects.filter(property=obj)
         return ContractSerializer(contracts, many=True).data
+
+
+class DocuSignTemplateSerializer(ModelSerializer):
+    is_active = BooleanField(default=True)
+    class Meta:
+        model = DocuSignTemplate
+        fields = '__all__'
+
+
+    def create(self, validated_data):
+        if 'is_active' not in validated_data:
+            validated_data['is_active'] = True
+        return super().create(validated_data)

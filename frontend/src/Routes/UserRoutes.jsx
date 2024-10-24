@@ -69,15 +69,16 @@ const UserRoutes = () => {
           element={token ? <ListingTypeDetails /> : <Navigate to="/login" />}
         />
 
-        {/* Account Routes */}
         <Route element={token ? <Layout /> : <Navigate to="/login" />}>
           <Route path="/my_account" element={<AccountDetails />} />
           <Route path="/my_properties" element={<MyProperties />} />
-          <Route path="/my_listings/:propertyId" element={<ManageSingleProperty />} />
+          <Route
+            path="/my_listings/:propertyId"
+            element={<ManageSingleProperty />}
+          />
           <Route path="/my_listings" element={<ManageListings />} />
           <Route path="/listing_profile" element={<ManageListingProfile />} />
           <Route path="/settings" element={<Settings />} />
-
         </Route>
       </Routes>
     </>

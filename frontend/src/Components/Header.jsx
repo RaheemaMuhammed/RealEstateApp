@@ -23,18 +23,20 @@ const Header = () => {
 
   // to show flying notification
   const showNotification = (message) => {
+    console.log("mesage",message);
     setFlyNoti(message);
     setTimeout(() => {
       setFlyNoti("");
-    }, 3000);
+    }, 6000);
   };
 
   useWebSocket(token, (data) => {
+    console.log(data);
     setNotifications((prevNotifications) => [
       data,
       ...(prevNotifications || []),
     ]);
-    showNotification(data?.message);
+    showNotification(data?.content);
   });
 
   // getting notifications
@@ -52,6 +54,10 @@ const Header = () => {
       }
     }
   }, [Refresh, token]);
+  useEffect(() => {
+    flyNoti
+  }, [flyNoti])
+  
 
   useEffect(() => {
     const unreadNotifications = notifications?.filter((noti) => !noti.is_read);
@@ -69,7 +75,7 @@ const Header = () => {
 
   return (
     <header>
-      {flyNoti !== "" && <p className={`notification`}>{flyNoti}</p>}
+      {flyNoti?.length>0 && <p className={`notification`}>{flyNoti}</p>}
 
       <nav className="bg-white sticky border-gray-200 px-4 lg:px-6 py-5 dark:bg-gray-800">
         <div className="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">

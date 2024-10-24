@@ -73,12 +73,12 @@ const NotificationListing = ({
           ) : (
             <ul className="space-y-2 font-medium">
               {notifications?.map((noti) => {
-                 const relativeTime = useTimeAgo(noti?.created_at)
+                 const relativeTime =noti?.created_at ?  useTimeAgo(noti?.created_at) :'now'
 
                  return (
                   <Link
                     className="flex items-center justify-between"
-                    to={``}
+                    
                   >
                     
                     <span className="w-[5%]">

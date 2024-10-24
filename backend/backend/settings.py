@@ -12,6 +12,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,7 +50,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'authentication',
-    'property'
+    'property',
+    'adminpanel'
+    
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -194,3 +202,14 @@ MEDIA_ROOT=BASE_DIR /'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+
+DOCUSIGN_CLIENT_ID = os.getenv('DOCUSIGN_CLIENT_ID')
+DOCUSIGN_USER_ID = os.getenv('DOCUSIGN_USER_ID')
+DOCUSIGN_ACCOUNT_ID = os.getenv('DOCUSIGN_ACCOUNT_ID')
+DOCUSIGN_PRIVATE_KEY_PATH = os.getenv('DOCUSIGN_PRIVATE_KEY_PATH')
+DOCUSIGN_REDIRECT_URI = os.getenv('DOCUSIGN_REDIRECT_URI')
+DOCUSIGN_BASE_URL = os.getenv('DOCUSIGN_BASE_URL')
+DS_BASE_URI = os.getenv('DS_BASE_URI')
+FRONTEND_URL = os.getenv('FRONTEND_URL')
+DS_WEBHOOK_URL = os.getenv('DS_WEBHOOK_URL')

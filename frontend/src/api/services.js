@@ -299,6 +299,40 @@ export const getSavedProperties = async (token) => {
     throw error;
   }
 };
+export const FetchOwnedProperties = async ( token) => {
+  try {
+      const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          
+        };
+    const response = await axiosUserInstance.get(
+      "property/owned_properties/",
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+export const FetchPipelineProperties = async ( token) => {
+  try {
+      const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          
+        };
+    const response = await axiosUserInstance.get(
+      "property/properties_in_pipeline/",
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 
 // properties of current user
@@ -354,3 +388,133 @@ export const handleStatusChange = async (token, values) => {
     throw error;
   }
 };
+
+// templates creation and fetching
+
+export const FetchTemplates = async ( token,propertyId) => {
+  try {
+      const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          
+        };
+    const response = await axiosUserInstance.get(
+      "property/contract_templates/",
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const AddContractTemplate = async (values, token) => {
+  try {
+    const config = {
+      headers: {
+        "Content-type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const response = await axiosUserInstance.post(
+      `property/contract_templates/`,
+      values,
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// contract fetching and updating
+
+export const FetchContracts = async ( token) => {
+  try {
+      const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          
+        };
+    const response = await axiosUserInstance.get(
+      "property/contracts/",
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const handleContractStatusChange = async (token, values) => {
+  try {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    const response = await axiosUserInstance.patch("property/contracts/",values,config);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// fetch users 
+export const FetchUsers = async ( token) => {
+  try {
+      const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          
+        };
+    const response = await axiosUserInstance.get(
+      "adminpanel/users/",
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+// fetch Properties for admin 
+export const FetchProperties = async ( token) => {
+  try {
+      const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          
+        };
+    const response = await axiosUserInstance.get(
+      "adminpanel/properties/",
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+// fetch anlutics
+export const FetchAnalytics = async ( token) => {
+  try {
+      const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          
+        };
+    const response = await axiosUserInstance.get(
+      "adminpanel/analytics/",
+      config
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+

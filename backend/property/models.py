@@ -125,7 +125,9 @@ class DocuSignTemplate(models.Model):
         max_length=10,
         choices=[('buy', 'Buy'), ('rent', 'Rent'), ('lease', 'Lease')]
     )
-    description = models.TextField(blank=True, null=True)  
+    description = models.TextField(blank=True, null=True) 
+    is_active = models.BooleanField(default=True) 
+    
 
     def __str__(self):
         return f"{self.template_name} ({self.listing_type})"
@@ -133,8 +135,11 @@ class DocuSignTemplate(models.Model):
 class Contract(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
+        ('in_review', 'In Review'),
+        ('sent_for_signing', 'Sent for Signing'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
+        ('completed', 'Completed'),
     ]
     LISTING_TYPE_CHOICES = [
         ('buy', 'Buy'),
@@ -148,11 +153,12 @@ class Contract(models.Model):
     owner_or_agent = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='contracts')
 
     template = models.ForeignKey(DocuSignTemplate, on_delete=models.CASCADE)  
-    docu_sign_url = models.URLField(blank=True, null=True)  
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    docu_sign_url = models.CharField(max_length=100,blank=True, null=True)  
+    signed_contract_file = models.FileField(upload_to='contracts/', blank=True, null=True)  # After signing
+
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pending')
     rejection_reason = models.TextField(blank=True, null=True)  
-    is_signed_by_owner = models.BooleanField(default=False)
-    is_signed_by_buyer = models.BooleanField(default=False)
+    
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

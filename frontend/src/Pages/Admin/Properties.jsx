@@ -1,35 +1,31 @@
 import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { FetchPipelineProperties } from '../../api/services'
-import TableForAll from '../Admin/Tables/TableForAll'
-const PipelineProperties = () => {
+import { FetchProperties } from '../../api/services';
+import { useSelector } from 'react-redux';
+import TableForAll from '../../Components/Admin/Tables/TableForAll';
+const Properties = () => {
+  const [properties,setProperties] = useState([])
+  const token = useSelector(state=>state.AdminReducer.accessToken)
   
-
-  const [ownedProperties, setOwnedProperties] = useState([])
-  const token = useSelector(state => state.UserReducer.accessToken)
-
-
   useEffect(() => {
-    const savedItems = async () =>{
-      try {
-          const response = await FetchPipelineProperties(token)
-          console.log(response);
-          if(response){
-              setOwnedProperties(response)
-          }
-          
-      } catch (error) {
-          console.log(error);
-      }
+    try {
+      const fetchPropes = async () => {
+        const response = await FetchProperties(token);
+        console.log(response);
+        if (response) {
+          setProperties(response)
+        }
+      };
+      fetchPropes();
+    } catch (error) {
+      console.log(error);
     }
-    savedItems()
+
   }, [token])
   const columns = [
     { header: 'Image', accessor: 'image' },
     { header: 'Address', accessor: 'address' },
     { header: 'Area', accessor: 'area' },
     { header: 'Type', accessor: 'property_type' },
-    { header: 'Stage', accessor: 'pipeline_stage' },
     {
       header: ' ',
       cell: (row) => (
@@ -60,14 +56,14 @@ const PipelineProperties = () => {
     <div className="col-span-12 xl:col-span-8">
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
   <div className="max-w-full overflow-x-auto">
-  {ownedProperties?.length > 0 ? (
+  {properties?.length > 0 ? (
             <TableForAll
               columns={columns}
-              data={ownedProperties}
+              data={properties}
               imageField="image"
             />
           ) : (
-            <p className='text-center text-title-md'>Nothing to showw!!</p>
+            <p className='text-center text-title-md'>No Properties listed!!</p>
           )}
    
   </div>
@@ -78,4 +74,4 @@ const PipelineProperties = () => {
   )
 }
 
-export default PipelineProperties
+export default Properties

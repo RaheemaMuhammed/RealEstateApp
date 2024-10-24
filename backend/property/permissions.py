@@ -26,4 +26,5 @@ class IsAgent(BasePermission):
 
 class IsOwner(BasePermission):
     def has_permission(self, request, view):
-        return hasattr(request.user, 'profile') and request.user.profile.user_type == 'owner'
+        user=request.user
+        return hasattr(request.user, 'profile') and user.profile.user_type == 'owner'

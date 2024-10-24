@@ -17,6 +17,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils import timezone
 from datetime import timedelta
 from .permissions import *
+from .utils import create_docusign_contract
+
 # Create your views here.
 class ListingProfileView(APIView):
     def post(self,request):
@@ -43,13 +45,19 @@ class ListingProfileDetailView(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
+        p=Profile.objects.get(user=self.request.user)
+        print(p)
         return Profile.objects.get(user=self.request.user)
     
 class PropertyListingView(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+
 
     def post(self, request, *args, **kwargs):
         profile = Profile.objects.get(user=request.user)
+        print(profile)
         serializer = PropertySerializer(data=request.data)
         
         if serializer.is_valid():
@@ -64,7 +72,6 @@ class PropertyListingView(APIView):
     
     def get(self, request, *args, **kwargs):
         profile = Profile.objects.get(user=request.user)
-        print(profile)
         property_id = request.query_params.get('property_id')
         
         if property_id:
@@ -209,27 +216,51 @@ class CallRequestView(APIView):
 
     def patch(self,request):
         try:
-            # Get the ID and new status from the request data
+            
             call_request_id = request.data.get('call_request_id')
             new_status = request.data.get('status')
 
             if not call_request_id or not new_status:
                 return Response({'error': 'CallRequest ID and new status are required', 'status': 400})
 
-            # Fetch the CallRequest instance
             call_request = CallRequest.objects.get(id=call_request_id)
 
-            # Check if the status provided is valid
+           
             if new_status not in ['pending', 'success', 'failed']:
                 return Response({'error': 'Invalid status', 'status': 400})
 
-            # Update the status
             call_request.status = new_status
             call_request.save()
 
+             #If status is success, do contract creation
+            if new_status == 'success':
+                template = DocuSignTemplate.objects.filter(listing_type=call_request.listing_type)[0]
+                print(template,'----template')
+                contract = Contract.objects.create(
+                    listing_type=call_request.listing_type,
+                    property=call_request.property,
+                    buyer_or_renter=call_request.requested_by,
+                    owner_or_agent=call_request.lister,
+                    template=template  
+                )
+                print(contract,'-----contract')
+
+                # 2. Fetch and Populate the DocuSign Template
+                
+                try:
+                    docusign_url = create_docusign_contract(contract)
+                    print(docusign_url)
+                    contract.docu_sign_url = docusign_url
+                    contract.save()
+                except Exception as e:
+                    return Response({'error': 'Failed to create DocuSign contract', 'details': str(e)}, status=500)
+
+                
+                # notify_admin(contract)
+
+            return Response({'status': 200, 'message': 'Request status updated and contract processed'}, status=200)
+
                   
-                  
-            return Response({'status':200,'message':'updated request status'})
         except Exception as e:
             return Response({'error':str(e),'status':400})
 
@@ -262,7 +293,7 @@ class CallRequestView(APIView):
             if serializer.is_valid():
                 call_request = serializer.save()
                 notification_content="You have a call request"
-                Notification.objects.create(user=property_listed.owner.user,content=notification_content,notification_type='call_request',call_request=call_request)
+                notif = Notification.objects.create(user=property_listed.owner.user,content=notification_content,notification_type='call_request',call_request=call_request)
 
                 try:
                     channel_layer = get_channel_layer()
@@ -272,7 +303,9 @@ class CallRequestView(APIView):
                         {
                             "type": "send_notification",
                             "notification": {
-                                "message": notification_content,
+                                "content": notification_content,
+                                "notification_type": "call_request",
+                                
                                 "is_read": False,
                             },
                         }
@@ -355,5 +388,126 @@ class SavedPropertiesView(APIView):
                             return Response({'status':200,'message':'property Added to Saved List Successfully'})
             except Exception as e:
                 return Response({'error':str(e)})
+
+class OwnedPropertiesView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        owned_properties = Property.objects.filter(
+            contracts__buyer_or_renter=user,
+            contracts__status='completed'
+        ).distinct()  
+
+        response_data = []
+
+        for property in owned_properties:
+            property_data = PropertySerializer(property).data
+
+            completed_contract = property.contracts.filter(
+                buyer_or_renter=user,
+                status='completed'
+            ).first()
+
+            if completed_contract and completed_contract.signed_contract_file:
+                property_data['signed_contract_file'] = completed_contract.signed_contract_file.url
+            else:
+                property_data['signed_contract_file'] = None
+
+            response_data.append(property_data)
+
+        return Response(response_data)
+class PipelinePropertiesView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        # Get properties where the contract is pending, and the user is the buyer or renter
+        pipeline_properties_contract = Property.objects.filter(
+            contracts__buyer_or_renter=user,
+            contracts__status='pending'
+        )
+
+        pipeline_properties_call_request = Property.objects.filter(
+            call_requests__requested_by=user
+        )
+
+        pipeline_properties = pipeline_properties_contract.union(pipeline_properties_call_request)
+
+        serialized_properties = []
+        
+        for property in pipeline_properties:
+            # Check if the property is part of a contract
+            if property in pipeline_properties_contract:
+                pipeline_stage = 'Contract Initiated'
+            else:
+                pipeline_stage = 'Callback Requested'
+            
+            # Serialize the property and add the 'pipeline_stage' key
+            property_data = PropertySerializer(property).data
+            property_data['pipeline_stage'] = pipeline_stage
+            serialized_properties.append(property_data)
+
+        return Response(serialized_properties)
+class ContractTemplates(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self,request):
+        try:
+            print(request.data)
+            serializer = DocuSignTemplateSerializer(data = request.data)
+            if serializer.is_valid():
+                tem=serializer.save()
+                print(tem.is_active)
+                return Response({'message': 'Template addedd successfully'}, status=200)
+
+            return Response({'message': 'Invalid Data', 'errors': serializer.errors}, status=400)
+        except Exception as e:
+            return Response({'error':str(e)})
+        
+
+    def get(self,request):
+        try:
+            templates = DocuSignTemplate.objects.all()
+            serializer = DocuSignTemplateSerializer(templates,many=True)
+            return Response({'payload':serializer.data,'status':200})
+
+        except Exception as e:
+            return Response({'error':str(e)})
+        
+class ContractsView(APIView):
+    def get(self, request):
+        """Fetch all contracts with 'pending' status."""
+        pending_contracts = Contract.objects.filter(status='pending')
+        serializer = ContractSerializer(pending_contracts, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
+
+    def patch(self, request, *args, **kwargs):
+        """Update the status of a specific contract."""
+        contract_id = request.data.get('contract_id')
+        status_choice = request.data.get('status')
+        rejection_reason = request.data.get('rejection_reason', '')
+
+        try:
+            contract = Contract.objects.get(id=contract_id)
+        except Contract.DoesNotExist:
+            return Response({'error': 'Contract not found'}, status=404)
+
+        if status_choice == 'approved':
+            contract.status = 'approved'
+            contract.save()
+            return Response({'message': 'Contract approved'}, status=200)
+        
+        elif status_choice == 'rejected':
+            contract.status = 'rejected'
+            contract.rejection_reason = rejection_reason
+            contract.save()
+            return Response({'message': 'Contract rejected'}, status=200)
+        
+        return Response({'error': 'Invalid status'}, status=400)
+    
 
 

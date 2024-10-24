@@ -40,20 +40,26 @@ const ListingOwnerDetails = () => {
       if (isEditing) {
         try {
           const response = await UpdateListingProfileDetails(token, values);
+          console.log(response);
           if (response) {
             toast.success("Profile details updated successfully");
+      navigate("/listing/property-details");
+
+          }else if(response?.status==400){
+            toast.error()
           }
         } catch (error) {
           toast.error("Couldn't update your profile");
         }
       }
-      navigate("/listing/property-details");
     } else {
       try {
         const response = await CreateListingProfile(values, token);
         console.log(response);
         if (response) {
           toast.success("Profile details added succesfully");
+      navigate("/listing/property-details");
+
         }
       } catch (error) {
         console.log(error);

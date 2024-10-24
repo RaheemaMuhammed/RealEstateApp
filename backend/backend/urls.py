@@ -28,5 +28,6 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/',include('authentication.urls')),
+    path('adminpanel/',include('adminpanel.urls')),
     path('property/',include('property.urls')),
 ]+  static(MEDIA_URL, document_root=MEDIA_ROOT)
